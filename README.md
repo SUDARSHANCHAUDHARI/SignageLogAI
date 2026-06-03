@@ -26,9 +26,13 @@ Open [http://localhost:3000](http://localhost:3000).
 AI_PROVIDER=claude        # or: openai
 ANTHROPIC_API_KEY=...     # if using Claude
 OPENAI_API_KEY=...        # if using OpenAI
+SIGNAGE_DATA_DIR=.signage-data
+SIGNAGE_STORAGE_DRIVER=file
 ```
 
 Works without API keys — parser runs client-side, AI enhancements require a key.
+
+Production storage defaults to file-backed JSON under `SIGNAGE_DATA_DIR`. Use a persistent mounted volume for this directory. Set `SIGNAGE_STORAGE_DRIVER=memory` only for disposable local demos.
 
 ## Detected Error Categories
 
