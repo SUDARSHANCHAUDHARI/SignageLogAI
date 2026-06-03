@@ -1,50 +1,62 @@
 # SignageLog AI
 
-AI-powered log investigation platform for digital signage teams. Paste messy device, browser, or player logs and get a clear root-cause explanation plus a customer-ready reply in seconds.
+![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=nextdotjs)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript)
+![License](https://img.shields.io/badge/License-MIT-blue)
+
+AI-assisted log investigation for digital signage support teams. Paste messy player, browser, or device logs and get a structured root-cause report with a customer-ready reply.
+
+## What It Does
+
+SignageLog AI turns raw operational logs into a readable investigation. It detects common signage failure categories, summarizes the likely cause, and stores previous investigations for follow-up.
 
 ## Features
 
-- **Log parser** — Detects 10+ error categories across all log formats
-- **AI root cause** — Explains what failed, which system, and why
-- **Customer reply** — Non-technical reply you can paste straight into support
-- **Developer notes** — Internal technical summary
-- **Export** — Download investigation as Markdown
+- Parses raw logs into structured events.
+- Detects network, CSP, iframe, media, cache, crash, timeout, memory, and offline categories.
+- Generates root cause, affected system, developer notes, and recommended steps.
+- Produces a plain-language customer reply.
+- Saves investigations with file-backed durable storage.
+- Exports investigation details as Markdown.
+
+## Tech Stack
+
+- Next.js 15 App Router
+- React 19
+- TypeScript strict mode
+- Tailwind CSS
+- Anthropic SDK and OpenAI SDK
+- File-backed JSON storage through a repository interface
 
 ## Setup
 
 ```bash
 pnpm install
-cp .env.example .env   # add your API key
+cp .env.example .env.local
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open `http://localhost:3000`.
 
-## Environment
+## Environment Variables
 
 ```env
-AI_PROVIDER=claude        # or: openai
-ANTHROPIC_API_KEY=...     # if using Claude
-OPENAI_API_KEY=...        # if using OpenAI
+AI_PROVIDER=claude
+ANTHROPIC_API_KEY=your_key_here
+OPENAI_API_KEY=your_key_here
 SIGNAGE_DATA_DIR=.signage-data
 SIGNAGE_STORAGE_DRIVER=file
 ```
 
-Works without API keys — parser runs client-side, AI enhancements require a key.
+AI keys are optional for local parser use. AI-generated explanations require either `ANTHROPIC_API_KEY` or `OPENAI_API_KEY`.
 
-Production storage defaults to file-backed JSON under `SIGNAGE_DATA_DIR`. Use a persistent mounted volume for this directory. Set `SIGNAGE_STORAGE_DRIVER=memory` only for disposable local demos.
+## Production Storage
 
-## Detected Error Categories
+Production uses file-backed JSON under `SIGNAGE_DATA_DIR`.
 
-`NETWORK_FAILURE` · `IFRAME_BLOCKED` · `CSP_ERROR` · `PLAYER_CRASH` · `APP_TIMEOUT` · `MEMORY_PRESSURE` · `MEDIA_LOAD_FAILED` · `CACHE_FAILURE` · `DEVICE_OFFLINE` · `BROWSER_RENDER_ERROR`
-
-## Tech Stack
-
-- Next.js 15 (App Router, Turbopack)
-- TypeScript strict
-- Tailwind CSS
-- pnpm
-- Anthropic SDK / OpenAI SDK
+- Mount `SIGNAGE_DATA_DIR` as persistent writable storage.
+- Keep `SIGNAGE_STORAGE_DRIVER=file` in production.
+- Use `SIGNAGE_STORAGE_DRIVER=memory` only for disposable demos.
 
 ## Production Checks
 
@@ -55,9 +67,13 @@ pnpm build
 
 ## Release Notes
 
-- Deploy with `SIGNAGE_DATA_DIR` set to a persistent writable volume.
-- Keep `SIGNAGE_STORAGE_DRIVER=file` for production.
 - Do not commit `.env`, `.env.local`, or generated `.signage-data` files.
+- Keep AI provider keys in the deployment environment.
+- Verify the persistent storage volume before public release.
+
+## Author
+
+Built by [Sudarshan Chaudhari](https://github.com/SUDARSHANCHAUDHARI) for **SudarshanTechLabs**.
 
 ## License
 
