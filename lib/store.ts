@@ -1,18 +1,14 @@
 import type { Investigation } from './types'
+import { getInvestigationRepository } from './storage'
 
-// In-memory store — lost on server restart (Phase 1 only)
-const investigations = new Map<string, Investigation>()
-
-export function saveInvestigation(investigation: Investigation): void {
-  investigations.set(investigation.id, investigation)
+export async function saveInvestigation(investigation: Investigation): Promise<void> {
+  await getInvestigationRepository().save(investigation)
 }
 
-export function getInvestigation(id: string): Investigation | undefined {
-  return investigations.get(id)
+export async function getInvestigation(id: string): Promise<Investigation | undefined> {
+  return getInvestigationRepository().get(id)
 }
 
-export function listInvestigations(): Investigation[] {
-  return Array.from(investigations.values()).sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  )
+export async function listInvestigations(): Promise<Investigation[]> {
+  return getInvestigationRepository().list()
 }

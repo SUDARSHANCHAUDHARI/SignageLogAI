@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { nanoid } from 'nanoid'
 import { chat } from '@/lib/ai'
+import { hasConfiguredAiKey } from '@/lib/env'
 import { parseLogs } from '@/lib/logParser'
 import { saveInvestigation } from '@/lib/store'
 import type { Investigation, AiAnalysis, Severity } from '@/lib/types'
+
+const MAX_LOG_CHARS = 200_000
+const MAX_TITLE_CHARS = 120
 
 const SYSTEM_PROMPT = `You are an expert digital signage QA and support engineer. Analyze these log events and return a JSON object:
 {
@@ -29,6 +33,12 @@ function inferSeverity(events: ReturnType<typeof parseLogs>): Severity {
 export async function POST(req: NextRequest) {
   const body = await req.json() as { logs: string; title?: string }
   if (!body.logs?.trim()) return NextResponse.json({ error: 'logs required' }, { status: 400 })
+  if (body.logs.length > MAX_LOG_CHARS) {
+    return NextResponse.json({ error: `logs must be ${MAX_LOG_CHARS} characters or fewer` }, { status: 413 })
+  }
+  if (body.title && body.title.length > MAX_TITLE_CHARS) {
+    return NextResponse.json({ error: `title must be ${MAX_TITLE_CHARS} characters or fewer` }, { status: 400 })
+  }
 
   const events = parseLogs(body.logs)
   const severity = inferSeverity(events)
@@ -43,7 +53,7 @@ export async function POST(req: NextRequest) {
     severity,
   }
 
-  if (process.env.ANTHROPIC_API_KEY || process.env.OPENAI_API_KEY) {
+  if (hasConfiguredAiKey()) {
     try {
       const eventsText = events
         .slice(0, 60)
@@ -71,6 +81,6 @@ export async function POST(req: NextRequest) {
     createdAt: new Date().toISOString(),
   }
 
-  saveInvestigation(investigation)
+  await saveInvestigation(investigation)
   return NextResponse.json(investigation)
 }
