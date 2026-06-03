@@ -1,14 +1,14 @@
-const provider = process.env.AI_PROVIDER ?? 'claude'
+import { getEnv } from './env'
 
 export async function chat(systemPrompt: string, userMessage: string): Promise<string> {
-  if (provider === 'openai') {
-    return chatOpenAI(systemPrompt, userMessage)
+  const env = getEnv()
+  if (env.aiProvider === 'openai') {
+    return chatOpenAI(systemPrompt, userMessage, env.openaiApiKey)
   }
-  return chatClaude(systemPrompt, userMessage)
+  return chatClaude(systemPrompt, userMessage, env.anthropicApiKey)
 }
 
-async function chatClaude(systemPrompt: string, userMessage: string): Promise<string> {
-  const apiKey = process.env.ANTHROPIC_API_KEY
+async function chatClaude(systemPrompt: string, userMessage: string, apiKey?: string): Promise<string> {
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set')
 
   const Anthropic = (await import('@anthropic-ai/sdk')).default
@@ -26,8 +26,7 @@ async function chatClaude(systemPrompt: string, userMessage: string): Promise<st
   return block.text
 }
 
-async function chatOpenAI(systemPrompt: string, userMessage: string): Promise<string> {
-  const apiKey = process.env.OPENAI_API_KEY
+async function chatOpenAI(systemPrompt: string, userMessage: string, apiKey?: string): Promise<string> {
   if (!apiKey) throw new Error('OPENAI_API_KEY is not set')
 
   const OpenAI = (await import('openai')).default
