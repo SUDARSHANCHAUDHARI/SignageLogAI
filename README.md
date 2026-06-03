@@ -46,6 +46,19 @@ Production storage defaults to file-backed JSON under `SIGNAGE_DATA_DIR`. Use a 
 - pnpm
 - Anthropic SDK / OpenAI SDK
 
+## Production Checks
+
+```bash
+pnpm typecheck
+pnpm build
+```
+
+## Release Notes
+
+- Deploy with `SIGNAGE_DATA_DIR` set to a persistent writable volume.
+- Keep `SIGNAGE_STORAGE_DRIVER=file` for production.
+- Do not commit `.env`, `.env.local`, or generated `.signage-data` files.
+
 ## License
 
 MIT
