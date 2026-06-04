@@ -58,6 +58,17 @@ Production uses file-backed JSON under `SIGNAGE_DATA_DIR`.
 - Keep `SIGNAGE_STORAGE_DRIVER=file` in production.
 - Use `SIGNAGE_STORAGE_DRIVER=memory` only for disposable demos.
 
+### Hosting Notes
+
+File-backed storage is suitable for a VPS, Docker host, or platform with a persistent disk. For example:
+
+```env
+SIGNAGE_STORAGE_DRIVER=file
+SIGNAGE_DATA_DIR=/data/signage-log-ai
+```
+
+If you deploy on Vercel or another serverless host, do not rely on local file writes for saved investigations. Serverless filesystems can reset between deployments or function instances. For that setup, use this release as the public app/code release and add a managed database adapter before depending on saved history in production.
+
 ## Production Checks
 
 ```bash
