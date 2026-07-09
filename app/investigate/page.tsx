@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Investigation } from '@/lib/types'
+import ApiKeySettings from '@/components/ApiKeySettings'
+import { getAiHeaders } from '@/lib/apiKey'
 
 const SEVERITY_STYLE = {
   LOW: 'text-green-400 border-green-500/30 bg-green-500/10',
@@ -31,7 +33,7 @@ export default function InvestigatePage() {
     try {
       const res = await fetch('/api/investigate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAiHeaders() },
         body: JSON.stringify({ logs, title }),
       })
       const data = await res.json() as Investigation & { error?: string }
@@ -46,7 +48,10 @@ export default function InvestigatePage() {
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-12">
-      <h1 className="text-3xl font-bold text-white mb-2">New Investigation</h1>
+      <div className="flex items-start justify-between gap-4 mb-2">
+        <h1 className="text-3xl font-bold text-white">New Investigation</h1>
+        <ApiKeySettings />
+      </div>
       <p className="text-gray-400 mb-8">Paste device, browser, or player logs. AI extracts root cause and writes the customer reply.</p>
 
       <div className="space-y-4 mb-6">

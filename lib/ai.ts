@@ -1,16 +1,23 @@
-import { getEnv } from './env'
+export type AIProvider = 'claude' | 'openai'
 
-export async function chat(systemPrompt: string, userMessage: string): Promise<string> {
-  const env = getEnv()
-  if (env.aiProvider === 'openai') {
-    return chatOpenAI(systemPrompt, userMessage, env.openaiApiKey)
-  }
-  return chatClaude(systemPrompt, userMessage, env.anthropicApiKey)
+export interface AICredentials {
+  provider: AIProvider
+  apiKey: string
 }
 
-async function chatClaude(systemPrompt: string, userMessage: string, apiKey?: string): Promise<string> {
-  if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set')
+export async function chat(
+  systemPrompt: string,
+  userMessage: string,
+  credentials: AICredentials,
+): Promise<string> {
+  if (!credentials?.apiKey) throw new Error('Missing API key')
+  if (credentials.provider === 'openai') {
+    return chatOpenAI(systemPrompt, userMessage, credentials.apiKey)
+  }
+  return chatClaude(systemPrompt, userMessage, credentials.apiKey)
+}
 
+async function chatClaude(systemPrompt: string, userMessage: string, apiKey: string): Promise<string> {
   const Anthropic = (await import('@anthropic-ai/sdk')).default
   const client = new Anthropic({ apiKey })
 
@@ -26,9 +33,7 @@ async function chatClaude(systemPrompt: string, userMessage: string, apiKey?: st
   return block.text
 }
 
-async function chatOpenAI(systemPrompt: string, userMessage: string, apiKey?: string): Promise<string> {
-  if (!apiKey) throw new Error('OPENAI_API_KEY is not set')
-
+async function chatOpenAI(systemPrompt: string, userMessage: string, apiKey: string): Promise<string> {
   const OpenAI = (await import('openai')).default
   const client = new OpenAI({ apiKey })
 

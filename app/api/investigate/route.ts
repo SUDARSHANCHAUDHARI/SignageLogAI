@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { nanoid } from 'nanoid'
-import { chat } from '@/lib/ai'
-import { hasConfiguredAiKey } from '@/lib/env'
+import { chat, type AIProvider } from '@/lib/ai'
 import { parseLogs } from '@/lib/logParser'
 import { saveInvestigation } from '@/lib/store'
 import type { Investigation, AiAnalysis, Severity } from '@/lib/types'
@@ -40,11 +39,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `title must be ${MAX_TITLE_CHARS} characters or fewer` }, { status: 400 })
   }
 
+  // Bring-your-own-key: supplied by the user per request, never stored server-side.
+  const apiKey = req.headers.get('x-api-key') ?? ''
+  const provider: AIProvider = req.headers.get('x-ai-provider') === 'openai' ? 'openai' : 'claude'
+
   const events = parseLogs(body.logs)
   const severity = inferSeverity(events)
 
   let analysis: AiAnalysis = {
-    rootCause: 'Unable to determine root cause — no AI key configured.',
+    rootCause: 'Unable to determine root cause — no API key set.',
     customerReply: 'We have received your logs and will investigate further. Our team will follow up shortly.',
     developerNotes: `Parsed ${events.length} significant log events.`,
     affectedSystem: 'Unknown',
@@ -53,13 +56,13 @@ export async function POST(req: NextRequest) {
     severity,
   }
 
-  if (hasConfiguredAiKey()) {
+  if (apiKey) {
     try {
       const eventsText = events
         .slice(0, 60)
         .map((e) => `[${e.level}][${e.category}] ${e.timestamp ?? 'no-ts'}: ${e.message}`)
         .join('\n')
-      const aiRaw = await chat(SYSTEM_PROMPT, `Log events (${events.length} total):\n${eventsText}`)
+      const aiRaw = await chat(SYSTEM_PROMPT, `Log events (${events.length} total):\n${eventsText}`, { provider, apiKey })
       const parsed = JSON.parse(aiRaw) as AiAnalysis
       analysis = { ...parsed, severity: parsed.severity ?? severity }
     } catch {
