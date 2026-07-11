@@ -38,7 +38,7 @@ export default function InvestigatePage() {
       })
       const data = await res.json() as Investigation & { error?: string }
       if (data.error) { setError(data.error); return }
-      router.push(`/investigations/${data.id}`)
+      router.push(`/investigations/view?id=${data.id}`)
     } catch {
       setError('Request failed.')
     } finally {

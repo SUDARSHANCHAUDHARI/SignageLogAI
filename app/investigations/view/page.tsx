@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useEffect, useState, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import type { Investigation } from '@/lib/types'
 
 const SEVERITY_STYLE: Record<string, string> = {
@@ -49,8 +49,9 @@ ${inv.events.map((e) => `- [${e.level}][${e.category}] ${e.timestamp ?? ''}: ${e
   a.click()
 }
 
-export default function InvestigationDetailPage() {
-  const { id } = useParams<{ id: string }>()
+function InvestigationDetailView() {
+  const searchParams = useSearchParams()
+  const id = searchParams.get('id') ?? ''
   const [inv, setInv] = useState<Investigation | null>(null)
   const [error, setError] = useState('')
 
@@ -138,5 +139,13 @@ export default function InvestigationDetailPage() {
         <p className="text-gray-400 text-sm leading-relaxed">{inv.developerNotes}</p>
       </div>
     </div>
+  )
+}
+
+export default function InvestigationDetailPage() {
+  return (
+    <Suspense>
+      <InvestigationDetailView />
+    </Suspense>
   )
 }

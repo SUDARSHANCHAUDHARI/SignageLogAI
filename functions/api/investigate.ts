@@ -1,9 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server'
+// Cloudflare Pages Function — serves POST /api/investigate.
+// Ported from app/api/investigate/route.ts. Investigations persist in Cloudflare
+// KV (binding SIGNAGE_KV) instead of the filesystem.
 import { nanoid } from 'nanoid'
-import { chat, type AIProvider } from '@/lib/ai'
-import { parseLogs } from '@/lib/logParser'
-import { saveInvestigation } from '@/lib/store'
-import type { Investigation, AiAnalysis, Severity } from '@/lib/types'
+import { chat, type AIProvider } from '../../lib/ai'
+import { parseLogs } from '../../lib/logParser'
+import { KVInvestigationRepository, type KVNamespaceLike } from '../../lib/storage/kv'
+import type { Investigation, AiAnalysis, Severity } from '../../lib/types'
 
 const MAX_LOG_CHARS = 200_000
 const MAX_TITLE_CHARS = 120
@@ -20,6 +22,13 @@ const SYSTEM_PROMPT = `You are an expert digital signage QA and support engineer
 }
 Respond with valid JSON only.`
 
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'content-type': 'application/json' },
+  })
+}
+
 function inferSeverity(events: ReturnType<typeof parseLogs>): Severity {
   const fatals = events.filter((e) => e.level === 'FATAL').length
   const errors = events.filter((e) => e.level === 'ERROR').length
@@ -29,19 +38,18 @@ function inferSeverity(events: ReturnType<typeof parseLogs>): Severity {
   return 'LOW'
 }
 
-export async function POST(req: NextRequest) {
-  const body = await req.json() as { logs: string; title?: string }
-  if (!body.logs?.trim()) return NextResponse.json({ error: 'logs required' }, { status: 400 })
-  if (body.logs.length > MAX_LOG_CHARS) {
-    return NextResponse.json({ error: `logs must be ${MAX_LOG_CHARS} characters or fewer` }, { status: 413 })
-  }
-  if (body.title && body.title.length > MAX_TITLE_CHARS) {
-    return NextResponse.json({ error: `title must be ${MAX_TITLE_CHARS} characters or fewer` }, { status: 400 })
-  }
+export const onRequestPost = async (context: {
+  request: Request
+  env: { SIGNAGE_KV: KVNamespaceLike }
+}): Promise<Response> => {
+  const body = (await context.request.json()) as { logs: string; title?: string }
+  if (!body.logs?.trim()) return json({ error: 'logs required' }, 400)
+  if (body.logs.length > MAX_LOG_CHARS) return json({ error: `logs must be ${MAX_LOG_CHARS} characters or fewer` }, 413)
+  if (body.title && body.title.length > MAX_TITLE_CHARS) return json({ error: `title must be ${MAX_TITLE_CHARS} characters or fewer` }, 400)
 
   // Bring-your-own-key: supplied by the user per request, never stored server-side.
-  const apiKey = req.headers.get('x-api-key') ?? ''
-  const provider: AIProvider = req.headers.get('x-ai-provider') === 'openai' ? 'openai' : 'claude'
+  const apiKey = context.request.headers.get('x-api-key') ?? ''
+  const provider: AIProvider = context.request.headers.get('x-ai-provider') === 'openai' ? 'openai' : 'claude'
 
   const events = parseLogs(body.logs)
   const severity = inferSeverity(events)
@@ -84,6 +92,6 @@ export async function POST(req: NextRequest) {
     createdAt: new Date().toISOString(),
   }
 
-  await saveInvestigation(investigation)
-  return NextResponse.json(investigation)
+  await new KVInvestigationRepository(context.env.SIGNAGE_KV).save(investigation)
+  return json(investigation)
 }

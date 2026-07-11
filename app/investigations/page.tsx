@@ -42,7 +42,7 @@ export default function InvestigationsPage() {
         {investigations.map((inv) => (
           <a
             key={inv.id}
-            href={`/investigations/${inv.id}`}
+            href={`/investigations/view?id=${inv.id}`}
             className="block bg-gray-900 border border-gray-800 hover:border-gray-700 rounded-xl p-5 transition-colors"
           >
             <div className="flex items-center justify-between mb-2">
