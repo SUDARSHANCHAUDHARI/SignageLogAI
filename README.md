@@ -25,49 +25,38 @@ SignageLog AI turns raw operational logs into a readable investigation. It detec
 - React 19
 - TypeScript strict mode
 - Tailwind CSS
-- Anthropic SDK and OpenAI SDK
-- File-backed JSON storage through a repository interface
+- Anthropic SDK and OpenAI SDK (called with the visitor's own key)
+- Cloudflare KV storage through a repository interface
 
 ## Setup
 
 ```bash
 pnpm install
-cp .env.example .env.local
 pnpm dev
 ```
 
-Open `http://localhost:3000`.
+Open `http://localhost:3000`. No `.env` is required — see Configuration below.
 
-## Environment Variables
+## Configuration
 
-```env
-AI_PROVIDER=claude
-ANTHROPIC_API_KEY=your_key_here
-OPENAI_API_KEY=your_key_here
-SIGNAGE_DATA_DIR=.signage-data
-SIGNAGE_STORAGE_DRIVER=file
-```
+**AI is bring-your-own-key.** There is no server-side API key. Each visitor adds
+their own Anthropic or OpenAI key in the app's Settings; it is stored only in
+their browser and sent per request (`x-api-key` header), so hosting the app
+publicly can never bill your account. Log parsing works without any key; only
+the AI-generated explanations need one.
 
-AI keys are optional for local parser use. AI-generated explanations require either `ANTHROPIC_API_KEY` or `OPENAI_API_KEY`.
+**Storage:** investigations persist in **Cloudflare KV** (binding `SIGNAGE_KV`).
+For local development the repository interface also ships `file` and `memory`
+drivers, selectable via `SIGNAGE_STORAGE_DRIVER`.
 
-## Production Storage
+## Deployment
 
-Production uses file-backed JSON under `SIGNAGE_DATA_DIR`.
+Deployed on **Cloudflare Pages** as a static export + Pages Functions:
 
-- Mount `SIGNAGE_DATA_DIR` as persistent writable storage.
-- Keep `SIGNAGE_STORAGE_DRIVER=file` in production.
-- Use `SIGNAGE_STORAGE_DRIVER=memory` only for disposable demos.
-
-### Hosting Notes
-
-File-backed storage is suitable for a VPS, Docker host, or platform with a persistent disk. For example:
-
-```env
-SIGNAGE_STORAGE_DRIVER=file
-SIGNAGE_DATA_DIR=/data/signage-log-ai
-```
-
-If you deploy on Vercel or another serverless host, do not rely on local file writes for saved investigations. Serverless filesystems can reset between deployments or function instances. For that setup, use this release as the public app/code release and add a managed database adapter before depending on saved history in production.
+- Build command `npx next build`, output directory `out`.
+- Compatibility flag `nodejs_compat` (for the AI SDKs).
+- Bind a KV namespace as `SIGNAGE_KV`.
+- Live at `signagelogai.sudarshantechlabs.com`.
 
 ## Production Checks
 
@@ -78,9 +67,8 @@ pnpm build
 
 ## Release Notes
 
-- Do not commit `.env`, `.env.local`, or generated `.signage-data` files.
-- Keep AI provider keys in the deployment environment.
-- Verify the persistent storage volume before public release.
+- No API keys live in the repo or the server — AI keys are supplied per-user in the browser.
+- Investigation persistence is Cloudflare KV; the `file` driver is local-dev only.
 
 ## Author
 
