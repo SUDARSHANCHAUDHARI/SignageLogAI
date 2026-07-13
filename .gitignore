@@ -90,3 +90,5 @@ graphify-out/
 # Log files
 *.log
 pnpm-debug.log*
+
+repoguard-results/
