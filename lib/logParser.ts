@@ -37,7 +37,8 @@ const CATEGORY_PATTERNS: Array<{ pattern: RegExp; category: ErrorCategory }> = [
   { pattern: /CSP|Content-Security-Policy|content security policy/i, category: 'CSP_ERROR' },
   { pattern: /X-Frame-Options|frame-ancestors|iframe|SAMEORIGIN|DENY/i, category: 'IFRAME_BLOCKED' },
   { pattern: /net::|ERR_CONNECTION|ECONNREFUSED|ENOTFOUND|fetch.*failed|network.*error|DNS/i, category: 'NETWORK_FAILURE' },
-  { pattern: /404|405|500|502|503|504/i, category: 'NETWORK_FAILURE' },
+  // Whole-number HTTP status only: not inside "1500" and not a duration like "500 ms".
+  { pattern: /\b(?:404|405|500|502|503|504)\b(?!\s*(?:ms|s|sec|secs|seconds|milliseconds)\b)/i, category: 'NETWORK_FAILURE' },
   { pattern: /player.*crash|crash.*player|media.*error|MediaError|HTMLMediaElement|video.*fail/i, category: 'PLAYER_CRASH' },
   { pattern: /timeout|timed out|ETIMEDOUT|deadline exceeded/i, category: 'APP_TIMEOUT' },
   { pattern: /OutOfMemory|heap.*limit|memory.*pressure|GC.*overhead|Allocation.*failed/i, category: 'MEMORY_PRESSURE' },
@@ -86,7 +87,7 @@ function detectCategory(line: string): ErrorCategory {
 function isSignificantLine(line: string, level: LogLevel): boolean {
   if (['FATAL', 'ERROR', 'WARN'].includes(level)) return true
   // Also capture lines with strong error signal even without explicit level
-  const errorSignals = /Exception|crash|timeout|failed|offline|CSP|X-Frame|404|500|memory|heap|null|undefined/i
+  const errorSignals = /Exception|crash|timeout|failed|offline|CSP|X-Frame|\b404\b|\b500\b|memory|heap|null|undefined/i
   return errorSignals.test(line)
 }
 
